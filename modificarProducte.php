@@ -1,0 +1,82 @@
+<?php
+include("includes/head.html");
+include("includes/menu.php");
+?>
+
+<div class="container">
+  <h3>AFEGIR NOU PRODUCTE</h3>
+  <form id="form-producte">
+    <label for="title">Nom:</label><br>
+    <input type="text" name="title" id="title" required><br><br>
+
+    <label for="price">Preu:</label><br>
+    <input type="number" step="0.01" name="price" id="price" required><br><br>
+
+    <label for="description">Descripció:</label><br>
+    <textarea name="description" id="description" rows="4" required></textarea><br><br>
+
+    <label for="category">Categoria:</label><br>
+    <input list="categories" name="category" id="category" required>
+    <datalist id="categories"></datalist><br><br>
+
+    <label for="image">URL de la imatge:</label><br>
+    <input type="url" name="image" id="image" required><br><br>
+
+    <button type="submit">Modificar producte</button>
+  </form>
+
+  <div id="resposta" style="margin-top:20px;"></div>
+</div>
+
+<script>
+     // Carregar les categories al datalist
+    fetch("api/productes.php?categories=all")
+        .then(response => response.json())
+        .then(data => {
+        const datalist = document.getElementById("categories");
+        data.forEach(cat => {
+            const opt = document.createElement("option");
+            opt.value = cat;
+            datalist.appendChild(opt);
+        });
+        })
+        .catch(error => {
+        console.error("Error carregant categories:", error);
+        });
+
+    function getParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+
+    let id = getParam('id');
+    let url = id ? `api/productes.php?id=${id}` : "api/productes.php?id=1";
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+        const container = document.getElementById("container");
+
+        if (data) {
+            const product = data;
+            const titol = document.getElementById("title").value = product.title;
+            const preu = document.getElementById("price").value = product.price;
+            const descripcio = document.getElementById("description").value = product.description;
+            const categoria = document.getElementById("category").value = product.category;
+            const imatge = document.getElementById("image").value = product.image;
+        } else {
+            container.innerHTML = "<p>Error al obtenir les dades de l'API.</p>";
+        }
+        })
+        .catch(error => {
+        document.getElementById("producte-container").innerHTML =
+            "<p>Error de connexió a l'API.</p>";
+        console.error(error);
+        });
+    
+
+</script>
+
+<?php
+include("includes/foot.html");
+?>
