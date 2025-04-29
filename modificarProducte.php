@@ -51,7 +51,41 @@ include("includes/menu.php");
 
     let id = getParam('id');
     let url = id ? `api/productes.php?id=${id}` : "api/productes.php?id=1";
+    document.getElementById("form-producte").addEventListener("submit", function(e) {
+    e.preventDefault();
 
+    const categoria = document.getElementById("category").value;
+
+    const dades = {
+        id: id,  
+        title: document.getElementById("title").value,
+        price: parseFloat(document.getElementById("price").value),
+        description: document.getElementById("description").value,
+        category: document.getElementById("category").value,
+        image: document.getElementById("image").value
+    };
+
+    fetch("api/productes.php", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(dades)
+    })
+    .then(response => response.json())
+    .then(data => {
+    if (data.success) {
+      window.location.href = `veureProductesCategoria.php?categoria=${encodeURIComponent(categoria)}`;
+    } else {
+      document.getElementById("resposta").innerHTML = `<p style="color: red;">${data.error}</p>`;
+    }
+    })
+    .catch(error => {
+      console.error("Error enviant dades:", error);
+      document.getElementById("resposta").innerHTML = `<p style="color: red;">Error inesperat</p>`;
+    });
+  });
+    
     fetch(url)
         .then(response => response.json())
         .then(data => {

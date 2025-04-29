@@ -106,9 +106,76 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     }
 // Peticions PUT
 } else if($_SERVER['REQUEST_METHOD'] == 'PUT') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $id = $input['id'] ?? null;
 
+    if ($id === null || !isset($input['title'], $input['price'], $input['description'], $input['category'], $input['image'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Falten l\'identificador o camps obligatoris']);
+    } else {
+        $stmt = $db->prepare(
+            "UPDATE productes SET title = :title, price = :price, description = :description, category = :category, image = :image WHERE id = :id"
+        );
+        $stmt->bindValue(':title', $input['title'], SQLITE3_TEXT);
+        $stmt->bindValue(':price', $input['price'], SQLITE3_FLOAT);
+        $stmt->bindValue(':description', $input['description'], SQLITE3_TEXT);
+        $stmt->bindValue(':category', $input['category'], SQLITE3_TEXT);
+        $stmt->bindValue(':image', $input['image'], SQLITE3_TEXT);
+        $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+
+        if ($stmt->execute()) {
+            echo json_encode(['success' => 'Producte actualitzat correctament']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error en l\'actualització del producte']);
+        }
+    }
 // Peticions PATCH
-} else if($_SERVER['REQUEST_METHOD'] == 'PATCH') {
+} else if ($_SERVER['REQUEST_METHOD'] == 'PATCH') {
+    // Leer el cuerpo de la solicitud
+    $input = json_decode(file_get_contents('php://input'), true);
+    $id = $input['id'] ?? null;
+
+    if ($id === null) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Falta l\'identificador del producte']);
+    } else {
+        // Obtener los campos válidos que se pueden actualizar
+        $campos_validos = ['title', 'price', 'description', 'category', 'image'];
+        $campos_a_actualizar = [];
+
+        foreach ($campos_validos as $campo) {
+            if (isset($input[$campo])) {
+                $campos_a_actualizar[$campo] = $input[$campo];
+            }
+        }
+
+        if (empty($campos_a_actualizar)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'No s\'ha proporcionat cap camp per actualitzar']);
+        } else {
+            // Construir dinámicamente la consulta SQL
+            $set_clause = [];
+            foreach ($campos_a_actualizar as $campo => $valor) {
+                $set_clause[] = "$campo = :$campo";
+            }
+            $set_clause_str = implode(', ', $set_clause);
+
+            $stmt = $db->prepare("UPDATE productes SET $set_clause_str WHERE id = :id");
+            foreach ($campos_a_actualizar as $campo => $valor) {
+                $tipo = is_numeric($valor) ? SQLITE3_FLOAT : SQLITE3_TEXT;
+                $stmt->bindValue(":$campo", $valor, $tipo);
+            }
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+
+            if ($stmt->execute()) {
+                echo json_encode(['success' => 'Producte actualitzat parcialment']);
+            } else {
+                http_response_code(500);
+                echo json_encode(['error' => 'Error en l\'actualització del producte']);
+            }
+        }
+    }
 
 // Peticions DELETE
 } else if($_SERVER['REQUEST_METHOD'] == 'DELETE') {
