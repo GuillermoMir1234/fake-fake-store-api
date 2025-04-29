@@ -66,7 +66,7 @@ include("includes/menu.php");
     };
 
     fetch("api/productes.php", {
-      method: "PATCH",
+      method: "PATCH", // Si pones PUT funcionara
       headers: {
         "Content-Type": "application/json"
       },
